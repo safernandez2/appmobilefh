@@ -1,74 +1,45 @@
-import 'setimmediate';
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import SQLite from 'react-native-sqlite-storage';
+import React, { useState } from 'react';
+import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
+const generateUniqueId = () => {
+  return new Date().getTime().toString();
+};
 
 const InscripcionesScreen = () => {
   const [nombre, setNombre] = useState('');
   const [edad, setEdad] = useState('');
   const [cedula, setCedula] = useState('');
   const [sexo, setSexo] = useState('');
-  const [db, setDb] = useState(null);
 
-  useEffect(() => {
-    const initializeDatabase = async () => {
-      try {
-        if (Platform.OS === 'android' || Platform.OS === 'ios') {
-          const database = SQLite.openDatabase({ name: 'mydatabase.db', location: 'default' });
-          setDb(database);
-        } else {
-          console.warn('Base de datos no disponible en entorno web');
-          // Código alternativo para entornos web si es necesario
-        }
-      } catch (error) {
-        console.error('Error al abrir la base de datos', error);
-      }
-    };
-
-    initializeDatabase();
-  }, []);
-
-  const handleInscribir = () => {
+  const handleInscribir = async () => {
     if (!nombre || !edad || !cedula || !sexo) {
       Alert.alert('Completa todos los campos');
       return;
     }
 
-    if (db) {
-      db.transaction(
-        (tx) => {
-          try {
-            tx.executeSql(
-              'INSERT INTO participantes (nombre, edad, cedula, sexo, tiempo) VALUES (?, ?, ?, ?, ?)',
-              [nombre, parseInt(edad), cedula, sexo, ''],
-              (tx, result) => {
-                console.log('Participante inscrito con éxito');
-                setNombre('');
-                setEdad('');
-                setCedula('');
-                setSexo('');
-                Alert.alert('Inscripción exitosa');
-              },
-              (error) => {
-                console.error('Error al inscribir al participante', error);
-                Alert.alert('Error al inscribir al participante');
-              }
-            );
-          } catch (error) {
-            console.error('Error en la transacción', error);
-            Alert.alert('Error en la transacción');
-          }
-        },
-        (error) => {
-          console.error('Error al iniciar la transacción', error);
-          Alert.alert('Error al iniciar la transacción');
-        }
-      );
-    } else {
-      console.error('Base de datos no disponible en entorno web');
-      Alert.alert('Error: Base de datos no disponible en entorno web');
+    try {
+      // Obtener la lista actual de participantes desde el almacenamiento
+      const participantesStr = await AsyncStorage.getItem('participantes');
+      const participantes = participantesStr ? JSON.parse(participantesStr) : [];
+
+      // Agregar el nuevo participante a la lista
+      const nuevoParticipante = { id: generateUniqueId(), nombre, edad: parseInt(edad), cedula, sexo, tiempo: '' };
+      participantes.push(nuevoParticipante);
+
+      // Actualizar el almacenamiento con la nueva lista de participantes
+      await AsyncStorage.setItem('participantes', JSON.stringify(participantes));
+
+      // Limpiar los campos después de la inscripción exitosa
+      setNombre('');
+      setEdad('');
+      setCedula('');
+      setSexo('');
+
+      Alert.alert('Inscripción exitosa');
+    } catch (error) {
+      console.error('Error al inscribir al participante', error);
+      Alert.alert('Error al inscribir al participante');
     }
   };
 
@@ -85,7 +56,7 @@ const InscripcionesScreen = () => {
         placeholder="Edad"
         value={edad}
         onChangeText={setEdad}
-        keyboardType="numeric" // Teclado numérico para la edad
+        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
@@ -106,13 +77,9 @@ const InscripcionesScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f4f4f4',
-    borderRadius: 10,
-    marginTop: 1,
-    marginRight: 20,
+    padding: 16,
+    marginTop: 100,
+    marginRight: 60,
   },
   input: {
     width: 200,

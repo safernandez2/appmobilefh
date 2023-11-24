@@ -1,74 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, Button, StyleSheet } from 'react-native';
-import SQLite from 'react-native-sqlite-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Función para generar un id único
+const generateUniqueId = () => {
+  return new Date().getTime().toString();
+};
+
 
 const LlegadaScreen = () => {
   const [participantes, setParticipantes] = useState([]);
   const [selectedParticipante, setSelectedParticipante] = useState(null);
   const [tiempoLlegada, setTiempoLlegada] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [db, setDb] = useState(null);
- 
+
   useEffect(() => {
-    const initializeDatabase = async () => {
+    const cargarParticipantes = async () => {
       try {
-        const database = await SQLite.openDatabase({ name: 'mydatabase.db', location: 'default' });
-        setDb(database);
+        const participantesStr = await AsyncStorage.getItem('participantes');
+        const participantes = participantesStr ? JSON.parse(participantesStr) : [];
+        
+        // Asignar un id único a los participantes que no lo tienen
+        const participantesConId = participantes.map((p) => ({
+          ...p,
+          id: p.id || generateUniqueId(),
+        }));
+
+        setParticipantes(participantesConId);
       } catch (error) {
-        console.error('Error al abrir la base de datos', error);
+        console.error('Error al cargar la lista de participantes', error);
       }
     };
 
-    initializeDatabase();
+    cargarParticipantes();
   }, []);
 
-
-  useEffect(() => {
-    if (db) {
-      // Cargar participantes desde la base de datos
-      db.transaction(
-        (tx) => {
-          tx.executeSql(
-            'SELECT * FROM participantes',
-            [],
-            (tx, result) => {
-              const rows = result.rows.raw();
-              setParticipantes(rows);
-            },
-            (error) => {
-              console.error('Error al ejecutar la consulta SELECT', error);
-            }
-          );
-        },
-        (error) => {
-          console.error('Error al iniciar la transacción', error);
-        }
-      );
-    }
-  }, [db]);
-
   const handleParticipantePress = (participante) => {
-    setSelectedParticipante(participante);
+    setSelectedParticipante(JSON.parse(JSON.stringify(participante)));
     setModalVisible(true);
   };
 
-  const handleGuardarTiempo = () => {
-    if (selectedParticipante) {
-      const updatedParticipantes = participantes.map((p) =>
-        p.id === selectedParticipante.id ? { ...p, tiempo: tiempoLlegada } : p
-      );
-      setParticipantes(updatedParticipantes);
+  
+  const handleGuardarTiempo = async () => {
+    if (selectedParticipante && tiempoLlegada.trim() !== '') {
+      const tiempoRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  
+      if (!tiempoRegex.test(tiempoLlegada)) {
+        Alert.alert('Formato de tiempo inválido. Utiliza el formato HH:mm');
+        return;
+      }
+  
+      // Utilizar una fecha fija para todos los tiempos
+      const fechaTiempo = new Date(2000, 0, 1);
+  
+      // Obtener las horas y minutos de la cadena de tiempo
+      const [horas, minutos] = tiempoLlegada.split(':').map(Number);
+  
+      // Establecer las horas y minutos en la fecha fija
+      fechaTiempo.setHours(horas, minutos);
+  
+      // Crear una nueva lista actualizada desde cero
+      const participantesActualizados = participantes.map((p) => ({
+        ...p,
+        tiempo: p.id === selectedParticipante.id ? fechaTiempo : p.tiempo,
+      }));
+  
+      const participantesOrdenados = participantesActualizados.sort((a, b) => (a.tiempo || 0) - (b.tiempo || 0));
+  
+      await AsyncStorage.setItem('participantes', JSON.stringify(participantesOrdenados));
+  
+      setParticipantes(participantesOrdenados);
       setModalVisible(false);
       setSelectedParticipante(null);
       setTiempoLlegada('');
     }
   };
+  
+  
+  
+  
+  
+  
+
+
+  const keyExtractor = (item, index) => item.id || index.toString();
 
   const renderParticipanteItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleParticipantePress(item)} style={styles.participanteItem}>
-      <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo}`}</Text>
+    <TouchableOpacity key={keyExtractor(item)} onPress={() => handleParticipantePress(item)} style={styles.participanteItem}>
+      <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo} - ${formatTiempo(item.tiempo) || 'Sin tiempo'}`}</Text>
     </TouchableOpacity>
   );
+
+  // Función para dar formato a la hora en formato de 24 horas
+  const formatTiempo = (tiempo) => {
+    if (tiempo instanceof Date) {
+      // Obtén solo la hora y los minutos
+      const horas = tiempo.getHours();
+      const minutos = tiempo.getMinutes();
+      const minutosStr = minutos < 10 ? `0${minutos}` : minutos;
+  
+      // Devuelve la hora y minutos formateados sin la fecha
+      return `${horas}:${minutosStr}`;
+    }
+  
+    return tiempo;
+  };
+  
 
   return (
     <View style={styles.container}>
@@ -91,7 +128,7 @@ const LlegadaScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Tiempo de llegada"
-              value={tiempoLlegada}
+              value={formatTiempo(tiempoLlegada)}
               onChangeText={setTiempoLlegada}
             />
 

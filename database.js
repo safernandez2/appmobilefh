@@ -1,37 +1,23 @@
 // database.js
-import SQLite from 'react-native-sqlite-storage';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const initializeDatabase = () => {
+const initializeDatabase = async () => {
   console.log('Iniciando la inicialización de la base de datos...');
 
-  if (Platform.OS === 'android' || Platform.OS === 'ios') {
-    const db = SQLite.openDatabase({ name: 'mydatabase.db', location: 'default' });
-
-    return new Promise((resolve, reject) => {
-      db.transaction(
-        (tx) => {
-          tx.executeSql(
-            'CREATE TABLE IF NOT EXISTS participantes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, edad INTEGER, cedula TEXT, sexo TEXT, tiempo TEXT)',
-            [],
-            (tx, result) => {
-              console.log('Tabla de participantes creada con éxito');
-              resolve();
-            },
-            (error) => {
-              console.error('Error al crear la tabla de participantes', error);
-              reject(error);
-            }
-          );
-        },
-        (error) => {
-          console.error('Error al iniciar la transacción', error);
-          reject(error);
-        }
-      );
-    });
+  try {
+    // Verificar si ya existe la clave 'participantes' en el almacenamiento
+    const participantesStr = await AsyncStorage.getItem('participantes');
+    if (!participantesStr) {
+      // Si no existe, inicializarla con un array vacío
+      await AsyncStorage.setItem('participantes', JSON.stringify([]));
+      console.log('Almacenamiento de participantes inicializado con éxito');
+    } else {
+      console.log('Almacenamiento de participantes ya existe');
+    }
+  } catch (error) {
+    console.error('Error al inicializar el almacenamiento', error);
+    throw error;
   }
 };
-
 
 export default initializeDatabase;
