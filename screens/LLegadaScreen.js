@@ -1,37 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Modal, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Modal, Button, Picker, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 // Función para generar un id único
 const generateUniqueId = () => {
   return new Date().getTime().toString();
 };
 
-
 const LlegadaScreen = () => {
   const [participantes, setParticipantes] = useState([]);
   const [selectedParticipante, setSelectedParticipante] = useState(null);
-  const [tiempoLlegada, setTiempoLlegada] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(0);
+  const [selectedMinute, setSelectedMinute] = useState(0);
 
   useEffect(() => {
     const cargarParticipantes = async () => {
       try {
         const participantesStr = await AsyncStorage.getItem('participantes');
         const participantes = participantesStr ? JSON.parse(participantesStr) : [];
-        
-        // Asignar un id único a los participantes que no lo tienen
+  
         const participantesConId = participantes.map((p) => ({
           ...p,
           id: p.id || generateUniqueId(),
         }));
-
+  
         setParticipantes(participantesConId);
       } catch (error) {
         console.error('Error al cargar la lista de participantes', error);
       }
     };
-
+  
     cargarParticipantes();
   }, []);
 
@@ -40,47 +41,33 @@ const LlegadaScreen = () => {
     setModalVisible(true);
   };
 
-  
   const handleGuardarTiempo = async () => {
-    if (selectedParticipante && tiempoLlegada.trim() !== '') {
-      const tiempoRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (selectedParticipante) {
+      // Combina las horas y los minutos en un solo número (ejemplo: 1130)
+      const tiempoNumerico = selectedHour * 100 + selectedMinute;
   
-      if (!tiempoRegex.test(tiempoLlegada)) {
-        Alert.alert('Formato de tiempo inválido. Utiliza el formato HH:mm');
-        return;
-      }
+      // Asegura que las horas sean siempre de dos dígitos
+      const horasStr = selectedHour < 10 ? `0${selectedHour}` : selectedHour.toString();
+      // Asegura que los minutos sean siempre de dos dígitos
+      const minutosStr = selectedMinute < 10 ? `0${selectedMinute}` : selectedMinute.toString();
   
-      // Utilizar una fecha fija para todos los tiempos
-      const fechaTiempo = new Date(2000, 0, 1);
+      const tiempoFormateado = parseInt(horasStr + minutosStr, 10);
   
-      // Obtener las horas y minutos de la cadena de tiempo
-      const [horas, minutos] = tiempoLlegada.split(':').map(Number);
-  
-      // Establecer las horas y minutos en la fecha fija
-      fechaTiempo.setHours(horas, minutos);
-  
-      // Crear una nueva lista actualizada desde cero
       const participantesActualizados = participantes.map((p) => ({
         ...p,
-        tiempo: p.id === selectedParticipante.id ? fechaTiempo : p.tiempo,
+        // Almacena el tiempo como un número
+        tiempo: p.id === selectedParticipante.id ? tiempoFormateado : p.tiempo,
       }));
+    
+      await AsyncStorage.setItem('participantes', JSON.stringify(participantesActualizados));
   
-      const participantesOrdenados = participantesActualizados.sort((a, b) => (a.tiempo || 0) - (b.tiempo || 0));
-  
-      await AsyncStorage.setItem('participantes', JSON.stringify(participantesOrdenados));
-  
-      setParticipantes(participantesOrdenados);
+      setParticipantes(participantesActualizados);
       setModalVisible(false);
       setSelectedParticipante(null);
-      setTiempoLlegada('');
+      setSelectedHour(0);
+      setSelectedMinute(0);
     }
   };
-  
-  
-  
-  
-  
-  
 
 
   const keyExtractor = (item, index) => item.id || index.toString();
@@ -91,20 +78,19 @@ const LlegadaScreen = () => {
     </TouchableOpacity>
   );
 
-  // Función para dar formato a la hora en formato de 24 horas
   const formatTiempo = (tiempo) => {
-    if (tiempo instanceof Date) {
-      // Obtén solo la hora y los minutos
-      const horas = tiempo.getHours();
-      const minutos = tiempo.getMinutes();
-      const minutosStr = minutos < 10 ? `0${minutos}` : minutos;
-  
-      // Devuelve la hora y minutos formateados sin la fecha
-      return `${horas}:${minutosStr}`;
+    if (tiempo === null || tiempo === undefined) {
+      return '';
     }
-  
-    return tiempo;
+    // Extrae las dos últimas cifras para las horas y los minutos
+    const horas = Math.floor(tiempo / 100);
+    const minutos = tiempo % 100;
+    // Asegura que las horas y los minutos sean siempre de dos dígitos
+    const horasStr = horas < 10 ? `0${horas}` : horas.toString();
+    const minutosStr = minutos < 10 ? `0${minutos}` : minutos.toString();
+    return `${horasStr}:${minutosStr}`;
   };
+
   
 
   return (
@@ -125,17 +111,47 @@ const LlegadaScreen = () => {
             <Text>{`Cedula: ${selectedParticipante?.cedula}`}</Text>
             <Text>{`Sexo: ${selectedParticipante?.sexo}`}</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Tiempo de llegada"
-              value={formatTiempo(tiempoLlegada)}
-              onChangeText={setTiempoLlegada}
-            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Hora:</Text>
+              <Picker
+                style={styles.picker}
+                selectedValue={selectedHour}
+                onValueChange={(itemValue) => setSelectedHour(itemValue)}
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <Picker.Item key={i} label={i.toString()} value={i} />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Minutos:</Text>
+              <Picker
+                style={styles.picker}
+                selectedValue={selectedMinute}
+                onValueChange={(itemValue) => setSelectedMinute(itemValue)}
+              >
+                {Array.from({ length: 60 }, (_, i) => (
+                  <Picker.Item key={i} label={i.toString()} value={i} />
+                ))}
+              </Picker>
+            </View>
 
             <Button title="Guardar" onPress={handleGuardarTiempo} />
           </View>
         </View>
       </Modal>
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="time"
+        onConfirm={(date) => {
+          setDatePickerVisibility(false);
+          setSelectedHour(date.getHours());
+          setSelectedMinute(date.getMinutes());
+        }}
+        onCancel={() => setDatePickerVisibility(false)}
+      />
     </View>
   );
 };
@@ -174,13 +190,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
   },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
+  pickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 10,
-    marginBottom: 10,
-    paddingHorizontal: 10,
+  },
+  pickerLabel: {
+    flex: 1,
+    fontSize: 16,
+  },
+  picker: {
+    flex: 2,
   },
 });
 

@@ -43,6 +43,19 @@ const InscripcionesScreen = () => {
     }
   };
 
+
+  // Función para borrar los datos almacenados
+  const borrarDatos = async () => {
+    try {
+      await AsyncStorage.removeItem('participantes');
+      console.log('Datos eliminados exitosamente');
+    } catch (error) {
+      console.error('Error al intentar borrar los datos', error);
+    }
+  };
+
+
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -71,6 +84,9 @@ const InscripcionesScreen = () => {
         onChangeText={setSexo}
       />
       <Button title="Inscribir" onPress={handleInscribir} />
+
+      <Button title="Borrar Datos" onPress={borrarDatos} color="red" />
+
     </View>
   );
 };
