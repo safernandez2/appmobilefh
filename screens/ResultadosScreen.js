@@ -31,9 +31,9 @@ const ResultadosScreen = () => {
     cargarResultados();
   }, []);
 
-  const renderParticipanteItem = ({ item }) => (
+  const renderParticipanteItem = ({ item, index }) => (
     <View style={{ padding: 10 }}>
-      <Text>{`Nombre: ${item.nombre} - Tiempo de llegada: ${formatTiempo(item.tiempo)}`}</Text>
+      <Text>{`${index + 1}.${item.nombre} - ${formatTiempo(item.tiempo)}`}</Text>
     </View>
   );
 

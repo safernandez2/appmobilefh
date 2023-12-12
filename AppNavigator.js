@@ -5,10 +5,12 @@ import { faBars } from '@fortawesome/free-solid-svg-icons';
 import InscripcionesScreen from './screens/InscripcionesScreen';
 import LlegadaScreen from './screens/LLegadaScreen'
 import ResultadosScreen from './screens/ResultadosScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
+
 
 const AppNavigator = () => {
   const [isMenuVisible, setMenuVisibility] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('Inscripciones');
+  const [selectedOption, setSelectedOption] = useState('Welcome');
   const [participantes, setParticipantes] = useState([]);
   const handleInscripcion = (nuevoParticipante) => {
     // Lógica para agregar nuevo participante a la lista
@@ -47,6 +49,7 @@ const AppNavigator = () => {
 
       {isMenuVisible && (
         <View style={styles.menu}>
+          {renderOption('Welcome')}
           {renderOption('Inscripciones')}
           {renderOption('Llegada')}
           {renderOption('Resultados')}
@@ -54,6 +57,7 @@ const AppNavigator = () => {
       )}
 
       <View style={styles.content}>
+        {selectedOption === 'Welcome' && <WelcomeScreen />}
         {selectedOption === 'Inscripciones' && <InscripcionesScreen onInscripcion={handleInscripcion} />}
         {selectedOption === 'Llegada' && <LlegadaScreen participantes={participantes}/>}
         {selectedOption === 'Resultados' && <ResultadosScreen participantes={participantes}/>}
