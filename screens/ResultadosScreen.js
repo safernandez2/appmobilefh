@@ -33,7 +33,9 @@ const ResultadosScreen = () => {
 
   const renderParticipanteItem = ({ item, index }) => (
     <View style={{ padding: 10 }}>
-      <Text>{`${index + 1}.${item.nombre} - ${formatTiempo(item.tiempo)}`}</Text>
+      <Text>{`${index + 1}.${item.nombre}`}</Text>
+      <Text>{`Cédula: ${item.cedula}, Edad: ${item.edad}, Sexo: ${item.sexo}`}</Text>
+      <Text>{`Tiempo: ${formatTiempo(item.tiempo)}`}</Text>
     </View>
   );
 

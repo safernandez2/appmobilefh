@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Modal, Button, Picker, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { FontAwesome5 } from '@expo/vector-icons';
 
 // Función para generar un id único
 const generateUniqueId = () => {
@@ -69,13 +70,29 @@ const LlegadaScreen = () => {
     }
   };
 
+  const borrarParticipante = async (participanteId) => {
+    try {
+      const participantesActualizados = participantes.filter((p) => p.id !== participanteId);
+
+      await AsyncStorage.setItem('participantes', JSON.stringify(participantesActualizados));
+
+      setParticipantes(participantesActualizados);
+    } catch (error) {
+      console.error('Error al intentar borrar el participante', error);
+    }
+  };
 
   const keyExtractor = (item, index) => item.id || index.toString();
 
   const renderParticipanteItem = ({ item }) => (
-    <TouchableOpacity key={keyExtractor(item)} onPress={() => handleParticipantePress(item)} style={styles.participanteItem}>
-      <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo} - ${formatTiempo(item.tiempo) || 'Sin tiempo'}`}</Text>
-    </TouchableOpacity>
+    <View style={styles.participanteItemContainer}>
+      <TouchableOpacity onPress={() => handleParticipantePress(item)} style={styles.participanteItem}>
+        <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo} - ${formatTiempo(item.tiempo) || 'Sin tiempo'}`}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => borrarParticipante(item.id)} style={styles.deleteButton}>
+        <FontAwesome5 name="trash-alt" size={20} color="white" />
+      </TouchableOpacity>
+    </View>
   );
 
   const formatTiempo = (tiempo) => {
@@ -91,8 +108,6 @@ const LlegadaScreen = () => {
     return `${horasStr}:${minutosStr}`;
   };
 
-  
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Lista de Participantes</Text>
@@ -105,6 +120,12 @@ const LlegadaScreen = () => {
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <FontAwesome5 name="times" size={20} color="black" />
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>{`Detalles de ${selectedParticipante?.nombre}`}</Text>
             <Text>{`Nombre: ${selectedParticipante?.nombre}`}</Text>
             <Text>{`Edad: ${selectedParticipante?.edad}`}</Text>
@@ -167,7 +188,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
   },
+  participanteItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   participanteItem: {
+    flex: 1,
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -175,10 +202,17 @@ const styles = StyleSheet.create({
   participanteText: {
     fontSize: 16,
   },
+  deleteButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
@@ -201,6 +235,12 @@ const styles = StyleSheet.create({
   },
   picker: {
     flex: 2,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
   },
 });
 

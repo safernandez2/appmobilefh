@@ -1,11 +1,27 @@
-// SplashScreen.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
+import ProgressBar from 'react-native-progress/Bar';
 
 const SplashScreen = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    // Puedes simular el progreso aquí (por ejemplo, cargando recursos, configuraciones, etc.)
+    const progressInterval = setInterval(() => {
+      setProgress((prevProgress) => {
+        const newProgress = prevProgress + 0.1;
+        return newProgress >= 1 ? 1 : newProgress;
+      });
+    }, 350);
+
+    // Limpia el intervalo al desmontar el componente
+    return () => clearInterval(progressInterval);
+  }, []);
+
   return (
     <View style={styles.container}>
       <Image source={require('../imagenes/logoat.png')} style={styles.image} />
+      <ProgressBar progress={progress} width={200} color="#3498db" />
       <Text style={styles.title}>Trackinscription</Text>
     </View>
   );
@@ -16,16 +32,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff', // Puedes ajustar el color de fondo
+    backgroundColor: '#ffffff',
   },
   image: {
-    width: 200, // Ajusta el ancho de la imagen según tus necesidades
-    height: 200, // Ajusta la altura de la imagen según tus necesidades
-    resizeMode: 'contain', // Puedes ajustar el modo de redimensionamiento
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
   },
   title: {
-    marginTop: 20, // Ajusta el espacio entre la imagen y el título
-    fontSize: 20, // Puedes ajustar el tamaño del texto
+    marginTop: 20,
+    fontSize: 20,
   },
 });
 

@@ -14,7 +14,7 @@ const App = () => {
       // Simula un tiempo de carga (puedes ajustar esto según tus necesidades)
       setTimeout(() => {
         setAppReady(true);
-      }, 3000);
+      }, 4000);
     };
 
     initializeApp();

@@ -12,10 +12,14 @@ const InscripcionesScreen = () => {
   const [cedula, setCedula] = useState('');
   const [sexo, setSexo] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInscribir = async () => {
     if (!nombre || !edad || !cedula || !sexo) {
-      Alert.alert('Completa todos los campos');
+      // Muestra el modal de error si faltan campos
+      setErrorMessage('Completa todos los campos.');
+      setErrorModalVisible(true);
       return;
     }
 
@@ -46,18 +50,9 @@ const InscripcionesScreen = () => {
   };
 
   const closeModal = () => {
-    // Cerrar el modal y hacer otras acciones necesarias
+    // Cerrar los modales y hacer otras acciones necesarias
     setModalVisible(false);
-  };
-
-  // Función para borrar los datos almacenados
-  const borrarDatos = async () => {
-    try {
-      await AsyncStorage.removeItem('participantes');
-      console.log('Datos eliminados exitosamente');
-    } catch (error) {
-      console.error('Error al intentar borrar los datos', error);
-    }
+    setErrorModalVisible(false);
   };
 
   return (
@@ -91,6 +86,7 @@ const InscripcionesScreen = () => {
           selectedValue={sexo}
           onValueChange={(itemValue) => setSexo(itemValue)}
         >
+          <Picker.Item label="Seleccionar" value="" />
           <Picker.Item label="Masculino" value="Masculino" />
           <Picker.Item label="Femenino" value="Femenino" />
           <Picker.Item label="Otro" value="Otro" />
@@ -99,12 +95,10 @@ const InscripcionesScreen = () => {
 
       <Button title="Inscribir" onPress={handleInscribir} />
 
-      <Button title="Borrar Datos" onPress={borrarDatos} color="red" />
-
-      {/* Modal de éxito */}
+      {/* Modales */}
       <Modal
         animationType="slide"
-        transparent={false}
+        transparent={true}
         visible={modalVisible}
         onRequestClose={closeModal}
       >
@@ -112,6 +106,21 @@ const InscripcionesScreen = () => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>¡Inscripción Exitosa!</Text>
             <Text>Tu participante ha sido registrado con éxito.</Text>
+            <Button title="OK" onPress={closeModal} />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={errorModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Error</Text>
+            <Text>{errorMessage}</Text>
             <Button title="OK" onPress={closeModal} />
           </View>
         </View>
@@ -152,6 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo oscuro para el modal
   },
   modalContent: {
     backgroundColor: 'white',
