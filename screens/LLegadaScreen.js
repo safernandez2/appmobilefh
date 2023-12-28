@@ -16,6 +16,8 @@ const LlegadaScreen = () => {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedHour, setSelectedHour] = useState(0);
   const [selectedMinute, setSelectedMinute] = useState(0);
+  const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
+  const [participanteToDelete, setParticipanteToDelete] = useState(null);
 
   useEffect(() => {
     const cargarParticipantes = async () => {
@@ -71,12 +73,19 @@ const LlegadaScreen = () => {
   };
 
   const borrarParticipante = async (participanteId) => {
+    const participante = participantes.find((p) => p.id === participanteId);
+    setParticipanteToDelete(participante);
+    setDeleteConfirmationVisible(true);
+  };
+
+  const confirmarBorrarParticipante = async () => {
     try {
-      const participantesActualizados = participantes.filter((p) => p.id !== participanteId);
+      const participantesActualizados = participantes.filter((p) => p.id !== participanteToDelete.id);
 
       await AsyncStorage.setItem('participantes', JSON.stringify(participantesActualizados));
 
       setParticipantes(participantesActualizados);
+      setDeleteConfirmationVisible(false);
     } catch (error) {
       console.error('Error al intentar borrar el participante', error);
     }
@@ -116,7 +125,18 @@ const LlegadaScreen = () => {
         renderItem={renderParticipanteItem}
         keyExtractor={(item) => item.id.toString()}
       />
-
+      <Modal visible={deleteConfirmationVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
+            <Text>{`¿Seguro que quieres eliminar a ${participanteToDelete?.nombre}?`}</Text>
+            <View style={styles.confirmationButtonsContainer}>
+              <Button title="Cancelar" onPress={() => setDeleteConfirmationVisible(false)} />
+              <Button title="Sí, eliminar" onPress={confirmarBorrarParticipante} color="red" />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -241,6 +261,11 @@ const styles = StyleSheet.create({
     top: 10,
     right: 10,
     zIndex: 1,
+  },
+  confirmationButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
   },
 });
 

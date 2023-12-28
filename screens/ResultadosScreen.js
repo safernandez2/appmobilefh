@@ -1,11 +1,12 @@
 import moment from 'moment';
 import 'moment/locale/es';
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ResultadosScreen = () => {
   const [resultados, setResultados] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState('');
 
   useEffect(() => {
     const cargarResultados = async () => {
@@ -34,7 +35,6 @@ const ResultadosScreen = () => {
   const renderParticipanteItem = ({ item, index }) => (
     <View style={{ padding: 10 }}>
       <Text>{`${index + 1}.${item.nombre}`}</Text>
-      <Text>{`Cédula: ${item.cedula}, Edad: ${item.edad}, Sexo: ${item.sexo}`}</Text>
       <Text>{`Tiempo: ${formatTiempo(item.tiempo)}`}</Text>
     </View>
   );
@@ -48,12 +48,40 @@ const ResultadosScreen = () => {
     return tiempoMoment.format('HH:mm');
   };
 
+  const renderGenreButtons = () => (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 }}>
+      <TouchableOpacity
+        style={{ padding: 10, backgroundColor: selectedGenre === 'Masculino' ? 'lightblue' : 'transparent' }}
+        onPress={() => setSelectedGenre('Masculino')}
+      >
+        <Text>Masculino</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{ padding: 10, backgroundColor: selectedGenre === 'Femenino' ? 'lightblue' : 'transparent' }}
+        onPress={() => setSelectedGenre('Femenino')}
+      >
+        <Text>Femenino</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{ padding: 10, backgroundColor: selectedGenre === 'Otro' ? 'lightblue' : 'transparent' }}
+        onPress={() => setSelectedGenre('Otro')}
+      >
+        <Text>Otro</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const filteredResultados = selectedGenre
+    ? resultados.filter((participante) => participante.sexo === selectedGenre)
+    : resultados;
+
   return (
     <View style={{ padding: 16 }}>
       <Text style={{ fontSize: 18, marginBottom: 10 }}>Resultados de Participantes</Text>
-      {resultados.length > 0 ? (
+      {renderGenreButtons()}
+      {filteredResultados.length > 0 ? (
         <FlatList
-          data={resultados}
+          data={filteredResultados}
           renderItem={renderParticipanteItem}
           keyExtractor={(item) => item.id.toString()}
         />

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, Text, StyleSheet } from 'react-native';
 
 const WelcomeScreen = () => {
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Trackinscription</Text>
       <Image source={require('../imagenes/logoat.png')} style={styles.image} />
     </View>
   );
@@ -12,10 +13,15 @@ const WelcomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ddd', // Color de fondo gris
+    backgroundColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
   image: {
     width: 200,

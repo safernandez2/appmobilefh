@@ -21,6 +21,7 @@
     "react-dom": "^18.2.0",
     "react-native": "0.72.6",
     "react-native-modal-datetime-picker": "^17.1.0",
+    "react-native-paper": "^4.12.6",
     "react-native-progress": "^5.0.1",
     "react-native-sqlite-2": "^3.6.2",
     "react-native-sqlite-storage": "^6.0.1",

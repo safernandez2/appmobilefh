@@ -6,7 +6,7 @@ import InscripcionesScreen from './screens/InscripcionesScreen';
 import LlegadaScreen from './screens/LLegadaScreen'
 import ResultadosScreen from './screens/ResultadosScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
-
+import ConsultasScreen from './screens/ConsultasScreen';
 
 const AppNavigator = () => {
   const [isMenuVisible, setMenuVisibility] = useState(false);
@@ -53,6 +53,7 @@ const AppNavigator = () => {
           {renderOption('Inscripciones')}
           {renderOption('Llegada')}
           {renderOption('Resultados')}
+          {renderOption('Consultas')}
         </View>
       )}
 
@@ -61,6 +62,8 @@ const AppNavigator = () => {
         {selectedOption === 'Inscripciones' && <InscripcionesScreen onInscripcion={handleInscripcion} />}
         {selectedOption === 'Llegada' && <LlegadaScreen participantes={participantes}/>}
         {selectedOption === 'Resultados' && <ResultadosScreen participantes={participantes}/>}
+        {selectedOption === 'Consultas' && <ConsultasScreen />}
+
       </View>
     </View>
   );
