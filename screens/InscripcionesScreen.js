@@ -57,7 +57,7 @@ const InscripcionesScreen = () => {
       setNombreError(false);
       setSexoError(false);
 
-      setModalVisible(true);
+      //setModalVisible(true);
     } catch (error) {
       console.error('Error al inscribir al participante', error);
       Alert.alert('Error al inscribir al participante');
