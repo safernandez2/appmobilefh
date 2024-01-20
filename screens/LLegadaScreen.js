@@ -13,9 +13,12 @@ const LlegadaScreen = () => {
   const [participantes, setParticipantes] = useState([]);
   const [selectedParticipante, setSelectedParticipante] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [selectedHour, setSelectedHour] = useState(0);
-  const [selectedMinute, setSelectedMinute] = useState(0);
+  const [isArrivalDatePickerVisible, setArrivalDatePickerVisibility] = useState(false);
+  const [isDepartureDatePickerVisible, setDepartureDatePickerVisibility] = useState(false);
+  const [selectedArrivalHour, setSelectedArrivalHour] = useState(0);
+  const [selectedArrivalMinute, setSelectedArrivalMinute] = useState(0);
+  const [selectedDepartureHour, setSelectedDepartureHour] = useState(0);
+  const [selectedDepartureMinute, setSelectedDepartureMinute] = useState(0);
   const [deleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
   const [participanteToDelete, setParticipanteToDelete] = useState(null);
 
@@ -24,18 +27,22 @@ const LlegadaScreen = () => {
       try {
         const participantesStr = await AsyncStorage.getItem('participantes');
         const participantes = participantesStr ? JSON.parse(participantesStr) : [];
-  
+
         const participantesConId = participantes.map((p) => ({
           ...p,
           id: p.id || generateUniqueId(),
+          selectedArrivalHour: p.selectedArrivalTime ? Math.floor(p.selectedArrivalTime / 100) : 0,
+          selectedArrivalMinute: p.selectedArrivalTime ? p.selectedArrivalTime % 100 : 0,
+          selectedDepartureHour: p.selectedDepartureTime ? Math.floor(p.selectedDepartureTime / 100) : 0,
+          selectedDepartureMinute: p.selectedDepartureTime ? p.selectedDepartureTime % 100 : 0,
         }));
-  
+
         setParticipantes(participantesConId);
       } catch (error) {
         console.error('Error al cargar la lista de participantes', error);
       }
     };
-  
+
     cargarParticipantes();
   }, []);
 
@@ -46,31 +53,30 @@ const LlegadaScreen = () => {
 
   const handleGuardarTiempo = async () => {
     if (selectedParticipante) {
-      // Combina las horas y los minutos en un solo número (ejemplo: 1130)
-      const tiempoNumerico = selectedHour * 100 + selectedMinute;
-  
-      // Asegura que las horas sean siempre de dos dígitos
-      const horasStr = selectedHour < 10 ? `0${selectedHour}` : selectedHour.toString();
-      // Asegura que los minutos sean siempre de dos dígitos
-      const minutosStr = selectedMinute < 10 ? `0${selectedMinute}` : selectedMinute.toString();
-  
-      const tiempoFormateado = parseInt(horasStr + minutosStr, 10);
+      const arrivalTimeNumerical = parseInt(`${selectedArrivalHour.toString().padStart(2, '0')}${selectedArrivalMinute.toString().padStart(2, '0')}`, 10);
+      const departureTimeNumerical = parseInt(`${selectedDepartureHour.toString().padStart(2, '0')}${selectedDepartureMinute.toString().padStart(2, '0')}`, 10);
   
       const participantesActualizados = participantes.map((p) => ({
         ...p,
-        // Almacena el tiempo como un número
-        tiempo: p.id === selectedParticipante.id ? tiempoFormateado : p.tiempo,
+        selectedArrivalTime: p.id === selectedParticipante.id ? arrivalTimeNumerical : p.selectedArrivalTime,
+        selectedDepartureTime: p.id === selectedParticipante.id ? departureTimeNumerical : p.selectedDepartureTime,
       }));
-    
+  
+      // Actualizar directamente el estado con los participantes actualizados
+      setParticipantes(participantesActualizados);
+  
+      // Guardar en AsyncStorage
       await AsyncStorage.setItem('participantes', JSON.stringify(participantesActualizados));
   
-      setParticipantes(participantesActualizados);
       setModalVisible(false);
       setSelectedParticipante(null);
-      setSelectedHour(0);
-      setSelectedMinute(0);
+      setSelectedArrivalHour(0);
+      setSelectedArrivalMinute(0);
+      setSelectedDepartureHour(0);
+      setSelectedDepartureMinute(0);
     }
   };
+
 
   const borrarParticipante = async (participanteId) => {
     const participante = participantes.find((p) => p.id === participanteId);
@@ -96,7 +102,7 @@ const LlegadaScreen = () => {
   const renderParticipanteItem = ({ item }) => (
     <View style={styles.participanteItemContainer}>
       <TouchableOpacity onPress={() => handleParticipantePress(item)} style={styles.participanteItem}>
-        <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo} - ${formatTiempo(item.tiempo) || 'Sin tiempo'}`}</Text>
+        <Text style={styles.participanteText}>{`${item.nombre} - ${item.edad} - ${item.cedula} - ${item.sexo} - Llegada: ${formatTiempo(item.selectedArrivalTime) || 'Sin tiempo'} - Salida: ${formatTiempo(item.selectedDepartureTime) || 'Sin tiempo'}`}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => borrarParticipante(item.id)} style={styles.deleteButton}>
         <FontAwesome5 name="trash-alt" size={20} color="white" />
@@ -108,10 +114,8 @@ const LlegadaScreen = () => {
     if (tiempo === null || tiempo === undefined) {
       return '';
     }
-    // Extrae las dos últimas cifras para las horas y los minutos
     const horas = Math.floor(tiempo / 100);
     const minutos = tiempo % 100;
-    // Asegura que las horas y los minutos sean siempre de dos dígitos
     const horasStr = horas < 10 ? `0${horas}` : horas.toString();
     const minutosStr = minutos < 10 ? `0${minutos}` : minutos.toString();
     return `${horasStr}:${minutosStr}`;
@@ -153,46 +157,52 @@ const LlegadaScreen = () => {
             <Text>{`Sexo: ${selectedParticipante?.sexo}`}</Text>
 
             <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Hora:</Text>
+              <Text style={styles.pickerLabel}>Hora de Salida:</Text>
               <Picker
                 style={styles.picker}
-                selectedValue={selectedHour}
-                onValueChange={(itemValue) => setSelectedHour(itemValue)}
+                selectedValue={selectedDepartureHour}
+                onValueChange={(itemValue) => setSelectedDepartureHour(itemValue)}
               >
                 {Array.from({ length: 24 }, (_, i) => (
-                  <Picker.Item key={i} label={i.toString()} value={i} />
+                  <Picker.Item key={i} label={i < 10 ? `0${i}` : i.toString()} value={i} />
                 ))}
               </Picker>
-            </View>
-
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Minutos:</Text>
               <Picker
                 style={styles.picker}
-                selectedValue={selectedMinute}
-                onValueChange={(itemValue) => setSelectedMinute(itemValue)}
+                selectedValue={selectedDepartureMinute}
+                onValueChange={(itemValue) => setSelectedDepartureMinute(itemValue)}
               >
                 {Array.from({ length: 60 }, (_, i) => (
-                  <Picker.Item key={i} label={i.toString()} value={i} />
+                  <Picker.Item key={i} label={i < 10 ? `0${i}` : i.toString()} value={i} />
+                ))}
+              </Picker>
+            </View>
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Hora de Llegada:</Text>
+              <Picker
+                style={styles.picker}
+                selectedValue={selectedArrivalHour}
+                onValueChange={(itemValue) => setSelectedArrivalHour(itemValue)}
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <Picker.Item key={i} label={i < 10 ? `0${i}` : i.toString()} value={i} />
+                ))}
+              </Picker>
+              <Picker
+                style={styles.picker}
+                selectedValue={selectedArrivalMinute}
+                onValueChange={(itemValue) => setSelectedArrivalMinute(itemValue)}
+              >
+                {Array.from({ length: 60 }, (_, i) => (
+                  <Picker.Item key={i} label={i < 10 ? `0${i}` : i.toString()} value={i} />
                 ))}
               </Picker>
             </View>
 
-            <Button title="Guardar" onPress={handleGuardarTiempo} />
+            <Button title="Guardar Tiempo" onPress={handleGuardarTiempo} />
           </View>
         </View>
       </Modal>
-
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="time"
-        onConfirm={(date) => {
-          setDatePickerVisibility(false);
-          setSelectedHour(date.getHours());
-          setSelectedMinute(date.getMinutes());
-        }}
-        onCancel={() => setDatePickerVisibility(false)}
-      />
     </View>
   );
 };
@@ -254,7 +264,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   picker: {
-    flex: 2,
+    flex: 1,
   },
   closeButton: {
     position: 'absolute',

@@ -1,8 +1,9 @@
-import moment from 'moment';
-import 'moment/locale/es';
+// ResultadosScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
+import 'moment/locale/es';
 
 const ResultadosScreen = () => {
   const [resultados, setResultados] = useState([]);
@@ -15,10 +16,10 @@ const ResultadosScreen = () => {
         const participantes = participantesStr ? JSON.parse(participantesStr) : [];
 
         const participantesOrdenados = participantes
-          .filter((participante) => participante.tiempo !== '')
+          .filter((participante) => participante.selectedDepartureTime !== null && participante.selectedArrivalTime !== null)
           .sort((a, b) => {
-            const tiempoA = parseInt(a.tiempo, 10);
-            const tiempoB = parseInt(b.tiempo, 10);
+            const tiempoA = a.selectedArrivalTime;
+            const tiempoB = b.selectedArrivalTime;
 
             return tiempoA - tiempoB;
           });
@@ -32,12 +33,36 @@ const ResultadosScreen = () => {
     cargarResultados();
   }, []);
 
-  const renderParticipanteItem = ({ item, index }) => (
-    <View style={{ padding: 10 }}>
-      <Text>{`${index + 1}.${item.nombre}`}</Text>
-      <Text>{`Tiempo: ${formatTiempo(item.tiempo)}`}</Text>
-    </View>
-  );
+  const renderParticipanteItem = ({ item, index }) => {
+    // Calcula el intervalo de tiempo entre la salida y la llegada en minutos
+    const intervaloMinutos = Math.abs(item.selectedDepartureTime - item.selectedArrivalTime);
+
+    return (
+      <View style={{ padding: 10 }}>
+        <Text>{`${index + 1}.${item.nombre}`}</Text>
+        <Text>{`Intervalo de Tiempo: ${formatIntervaloTiempo(intervaloMinutos)}`}</Text>
+      </View>
+    );
+  };
+
+  const formatIntervaloTiempo = (minutos) => {
+    const horas = Math.floor(minutos / 60);
+    const minutosRestantes = minutos % 60;
+
+    let resultado = '';
+    if (horas > 0) {
+      resultado += `${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+    }
+
+    if (minutosRestantes > 0) {
+      if (resultado !== '') {
+        resultado += ' ';
+      }
+      resultado += `${minutosRestantes} ${minutosRestantes === 1 ? 'minuto' : 'minutos'}`;
+    }
+
+    return resultado;
+  };
 
   const formatTiempo = (tiempo) => {
     if (tiempo === null || tiempo === undefined) {
