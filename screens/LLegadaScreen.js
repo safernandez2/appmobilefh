@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, FlatList, Modal, Button, Picker, StyleShe
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { FontAwesome5 } from '@expo/vector-icons';
+import 'moment/locale/es';
 
 // Función para generar un id único
 const generateUniqueId = () => {

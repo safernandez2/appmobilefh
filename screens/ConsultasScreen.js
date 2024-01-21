@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { View, Text, TextInput, Button } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
+import 'moment/locale/es';
 
 const ConsultasScreen = () => {
   const [participantes, setParticipantes] = useState([]);
@@ -24,7 +26,7 @@ const ConsultasScreen = () => {
   }, []);
 
   const handleSearch = () => {
-    setError(''); // Limpiar el mensaje de error al comenzar una nueva búsqueda
+    setError('');
 
     const isNumeric = /^\d+$/.test(searchText);
     if (isNumeric && searchText.length === 10) {
@@ -33,13 +35,45 @@ const ConsultasScreen = () => {
         setFilteredParticipante(filtered);
       } else {
         setError('Participante no encontrado');
-        setFilteredParticipante(null); // Limpiar los datos del participante si no se encuentra
+        setFilteredParticipante(null);
       }
     } else {
       setError('La cédula debe contener solo números y tener una longitud de 10 dígitos');
-      setFilteredParticipante(null); // Limpiar los datos del participante si hay error
+      setFilteredParticipante(null);
     }
   };
+
+  const formatIntervaloTiempo = (llegada, salida) => {
+    if (llegada === null || salida === null || llegada === undefined || salida === undefined) {
+      return '';
+    }
+  
+    const llegadaMoment = moment(llegada, 'Hmm');
+    const salidaMoment = moment(salida, 'Hmm');
+    const intervaloMinutos = salidaMoment.diff(llegadaMoment, 'minutes');
+  
+    const horas = Math.floor(Math.abs(intervaloMinutos) / 60);
+    const minutosRestantes = Math.abs(intervaloMinutos) % 60;
+  
+    let resultado = '';
+    if (intervaloMinutos < 0) {
+      resultado += ' ';
+    }
+  
+    if (horas > 0) {
+      resultado += `${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+    }
+  
+    if (minutosRestantes > 0) {
+      if (resultado !== '') {
+        resultado += ' ';
+      }
+      resultado += `${minutosRestantes} ${minutosRestantes === 1 ? 'minuto' : 'minutos'}`;
+    }
+  
+    return resultado;
+  };
+  
 
   const renderParticipanteDetails = () => {
     if (filteredParticipante) {
@@ -47,7 +81,7 @@ const ConsultasScreen = () => {
         <View style={{ padding: 10 }}>
           <Text>{`Nombre: ${filteredParticipante.nombre}`}</Text>
           <Text>{`Cedula: ${filteredParticipante.cedula}`}</Text>
-          <Text>{`Tiempo: ${formatTiempo(filteredParticipante.tiempo)}`}</Text>
+          <Text>{`Tiempo: ${formatIntervaloTiempo(filteredParticipante.selectedArrivalTime, filteredParticipante.selectedDepartureTime)}`}</Text>
         </View>
       );
     } else if (error) {
@@ -57,17 +91,6 @@ const ConsultasScreen = () => {
     }
   };
 
-  const formatTiempo = (tiempo) => {
-    if (tiempo === null || tiempo === undefined) {
-      return '';
-    }
-    const horas = Math.floor(tiempo / 100);
-    const minutos = tiempo % 100;
-    const horasStr = horas < 10 ? `0${horas}` : horas.toString();
-    const minutosStr = minutos < 10 ? `0${minutos}` : minutos.toString();
-    return `${horasStr}:${minutosStr}`;
-  };
-
   return (
     <View style={{ padding: 16 }}>
       <Text style={{ fontSize: 18, marginBottom: 10 }}>Consulta de Participantes</Text>
@@ -75,7 +98,6 @@ const ConsultasScreen = () => {
         style={{ height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10, padding: 5 }}
         placeholder="Buscar por cédula"
         onChangeText={(text) => {
-          // Validar que solo se ingresen números
           if (/^\d+$/.test(text) || text === '') {
             setSearchText(text);
           }

@@ -35,8 +35,14 @@ const ResultadosScreen = () => {
 
   const renderParticipanteItem = ({ item, index }) => {
     // Calcula el intervalo de tiempo entre la salida y la llegada en minutos
-    const intervaloMinutos = Math.abs(item.selectedDepartureTime - item.selectedArrivalTime);
+    const arrivalTimeMoment = moment(item.selectedArrivalTime, 'Hmm');
+    const departureTimeMoment = moment(item.selectedDepartureTime, 'Hmm');
+    const intervaloMinutos = arrivalTimeMoment.diff(departureTimeMoment, 'minutes');
 
+    console.log('Arrival Time Moment:', arrivalTimeMoment.format('HH:mm'));
+    console.log('Departure Time Moment:', departureTimeMoment.format('HH:mm'));
+    console.log('Intervalo en minutos:', intervaloMinutos);
+  
     return (
       <View style={{ padding: 10 }}>
         <Text>{`${index + 1}.${item.nombre}`}</Text>
@@ -44,25 +50,29 @@ const ResultadosScreen = () => {
       </View>
     );
   };
+  
+
 
   const formatIntervaloTiempo = (minutos) => {
     const horas = Math.floor(minutos / 60);
     const minutosRestantes = minutos % 60;
-
+  
     let resultado = '';
     if (horas > 0) {
       resultado += `${horas} ${horas === 1 ? 'hora' : 'horas'}`;
     }
-
+  
     if (minutosRestantes > 0) {
       if (resultado !== '') {
         resultado += ' ';
       }
       resultado += `${minutosRestantes} ${minutosRestantes === 1 ? 'minuto' : 'minutos'}`;
     }
-
+  
     return resultado;
   };
+  
+ 
 
   const formatTiempo = (tiempo) => {
     if (tiempo === null || tiempo === undefined) {
